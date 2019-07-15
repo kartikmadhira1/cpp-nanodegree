@@ -1,6 +1,8 @@
 # CppND-System-Monitor
 
-## To setup and compile inUbuntu workspace:
+Starter code for System Monitor Project in the C++ OOP course. Most of the code is provided for you here. Follow along with the classroom lesson to fill out the `ProcessParser` and `Process` classes to complete your project!
+
+## To setup and compile in Udacity Ubuntu workspace:
 
 1. Clone repository into `/home/workspace/`
 ```
