@@ -196,11 +196,10 @@ string ProcessParser::getVmSize(string pid){
    //grab the string that matches a part
     std::string req_string = "VmData";
     std::ifstream stream;
-    Util::getStream(Path::basePath() + pid + Path::statusPath(),stream);
+    Util::getStream(Path::basePath() + pid  +Path::statusPath(),stream);
     std::string line;
     //read line by line
     float result;
-    std::string value;
     while(std::getline(stream,line)){
         //compare each line and check if it matches with our req template
         if(line.compare(0,req_string.length(),req_string)==0){
@@ -209,7 +208,7 @@ string ProcessParser::getVmSize(string pid){
             std::istream_iterator<string> beg(buf),end;
             std::vector<string> values(beg,end);
 
-            result = std::stof(&value[1])/float(1024);
+            result = stof(values[1])/float(1024*1024);
             break;
         }
     }
@@ -241,7 +240,7 @@ std::string ProcessParser::getCpuPercent(string pid){
     //open file stream to pid specific stat
     std::ifstream stream;
     // std::string values;
-    Util::getStream(Path::basePath() + pid + Path::statPath(),stream);
+    Util::getStream(Path::basePath() + pid  + "/" + Path::statPath(),stream);
     //read the line, create a buffer and get the specific time intervals
     std::string line;
     std::getline(stream,line);
@@ -269,7 +268,7 @@ std::string ProcessParser::getProcUpTime(string pid){
     std::ifstream stream;
     std::string line;
     // std::string values;
-    Util::getStream(Path::basePath() + pid + Path::statPath(),stream);
+    Util::getStream(Path::basePath() + pid + "/" + Path::statPath(),stream);
     //get the stream line
     std::getline(stream, line);
     std::stringstream buf(line);
