@@ -35,7 +35,7 @@ private:
     static vector<string> getSysCpuPercent(string coreNumber = "");
     static float getSysRamPercent();
     static string getSysKernelVersion();
-    static int getNumberOfCores();
+    static int getNumbesrOfCores();
     static int getTotalThreads();
     static int getTotalNumberOfProcesses();
     static int getNumberOfRunningProcesses();
