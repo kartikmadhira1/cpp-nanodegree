@@ -137,8 +137,16 @@ Pointer<T,size>::Pointer(const Pointer &ob){
 // Destructor for Pointer.
 template <class T, int size>
 Pointer<T, size>::~Pointer(){
-    // delete all the reference to the created pointers.
-
+    
+    /* Delete all the reference to the created pointers.
+    once the the pointer is out of scope, this destructor is called
+    since the memory this pointer is pointing might be shared by 
+    some other pointer as well, we just decrement the reference*/
+    typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(*addr);
+    if(p->refcount > 0) {
+        p->refcount--;
+    }
+    collect();
 }
 
 // Collect garbage. Returns true if at least
