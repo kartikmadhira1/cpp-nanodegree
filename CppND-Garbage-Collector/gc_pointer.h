@@ -16,6 +16,8 @@ template <class T, int size = 0>
 class Pointer{
 private:
     // refContainer maintains the garbage collection list.
+    //this is a static list as it needs to keep track 
+    //of every pointer initiated.
     static std::list<PtrDetails<T> > refContainer;
     // addr points to the allocated memory to which
     // this Pointer pointer currently points.
@@ -102,6 +104,14 @@ bool Pointer<T, size>::first = true;
 template<class T,int size>
 Pointer<T,size>::Pointer(T *t){
     // Register shutdown() as an exit function.
+    // Create a PtrDetails object and keep adding
+    PtrDetails<T> new_pointer;
+    new_pointer.arraySize = size;
+    new_pointer.isArray = isArray;
+    new_pointer.memPtr = &t;
+    new_pointer.refcount += 1;
+    // Append this PtrDetails to the refContainer
+    refContainer.push_back(new_pointer);
     if (first)
         atexit(shutdown);
     first = false;
@@ -111,36 +121,47 @@ Pointer<T,size>::Pointer(T *t){
     else {
         isArray = false;
     }
-    //setting the address to be at the new pointer's address
+    // Setting the address to be at the new pointer's address
     addr = &t;
-    //setting the arraysize field to be that of the pointer size initialized
+    // Setting the array size field to be that of the pointer size initialized
     arraySize = size;
 }
 // Copy constructor.
 template< class T, int size>
 Pointer<T,size>::Pointer(const Pointer &ob){
 
-    // TODO: Implement Pointer constructor
-    // Lab: Smart Pointer Project Lab
-
+    //INCOMPLETE
+    auto _pointer_copy = new Pointer(ob);
 }
 
 // Destructor for Pointer.
 template <class T, int size>
 Pointer<T, size>::~Pointer(){
-    
-    // TODO: Implement Pointer destructor
-    // Lab: New and Delete Project Lab
+    // delete all the reference to the created pointers.
+
 }
 
 // Collect garbage. Returns true if at least
 // one object was freed.
 template <class T, int size>
 bool Pointer<T, size>::collect(){
-
-    // TODO: Implement collect function
-    // LAB: New and Delete Project Lab
-    // Note: collect() will be called in the destructor
+    // Iterate through the list and check if 
+    // the refCount on them is greater than 1.
+    typename std::list<PtrDetails<T>>::iterator p;
+    for(p=refContainer.begin(); p!=refContainer.end(), ++p){
+        if(p->refcount < 1){
+            // Also remove the object from the memory
+            if(p->isArray) {
+                delete[] p->memPtr;
+            }
+            else {
+                delete p->memPtr;
+            }
+            // Remove PtrDetails object from the refContainer.
+            refContainer.remove(*p);
+            return true;
+        }
+    }
     return false;
 }
 
