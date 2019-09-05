@@ -105,16 +105,10 @@ template<class T,int size>
 Pointer<T,size>::Pointer(T *t){
     // Register shutdown() as an exit function.
     // Create a PtrDetails object and keep adding
-    PtrDetails<T> new_pointer;
-    new_pointer.arraySize = size;
-    new_pointer.isArray = isArray;
-    new_pointer.memPtr = &t;
-    new_pointer.refcount += 1;
-    // Append this PtrDetails to the refContainer
-    refContainer.push_back(new_pointer);
     if (first)
         atexit(shutdown);
     first = false;
+    arraySize = size;
     if(size > 0) {
         isArray = true;
     }
@@ -124,28 +118,32 @@ Pointer<T,size>::Pointer(T *t){
     // Setting the address to be at the new pointer's address
     addr = &t;
     // Setting the array size field to be that of the pointer size initialized
-    arraySize = size;
+    PtrDetails<T>* new_pointer = new PtrDetails<T>();
+    new_pointer.arraySize = size;
+    new_pointer.isArray = isArray;
+    new_pointer.memPtr = &t;
+    new_pointer.refcount += 1;
+    // Append this PtrDetails to the refContainer
+    refContainer.push_back(new_pointer);
 }
 // Copy constructor.
 template< class T, int size>
 Pointer<T,size>::Pointer(const Pointer &ob){
-
-    //INCOMPLETE
-    auto _pointer_copy = new Pointer(ob);
+    // Create a new pointer of type Pointer<T>
+    Pointer<T> new_pointer = 
 }
 
 // Destructor for Pointer.
+/* Delete all the reference to the created pointers.
+once the the pointer is out of scope, this destructor is called
+since the memory this pointer is pointing might be shared by 
+some other pointer as well, we just decrement the reference*/
 template <class T, int size>
 Pointer<T, size>::~Pointer(){
-    
-    /* Delete all the reference to the created pointers.
-    once the the pointer is out of scope, this destructor is called
-    since the memory this pointer is pointing might be shared by 
-    some other pointer as well, we just decrement the reference*/
     typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(*addr);
     if(p->refcount > 0) {
         p->refcount--;
-    }
+        }
     collect();
 }
 
@@ -176,10 +174,7 @@ bool Pointer<T, size>::collect(){
 // Overload assignment of pointer to Pointer.
 template <class T, int size>
 T *Pointer<T, size>::operator=(T *t){
-
-    // TODO: Implement operator==
-    // LAB: Smart Pointer Project Lab
-
+    return 
 }
 // Overload assignment of Pointer to Pointer.
 template <class T, int size>
