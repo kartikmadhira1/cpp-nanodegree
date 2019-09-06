@@ -102,18 +102,28 @@ bool Pointer<T, size>::first = true;
 
 // Constructor for both initialized and uninitialized objects. -> see class interface
 template<class T,int size>
-Pointer<T,size>::Pointer(T *t){
+Pointer<T,size>::Pointer(T *t) {
     // Register shutdown() as an exit function.
     // Create a PtrDetails object and keep adding
+
     if(first)
         atexit(shutdown);
     first = false;
-    
+    if(size > 0) {
+        isArray = true;
+    }
+    else {
+        isArray = false;
+    }
+    // Setting the address to be at the new pointer's address
+    addr = t;
+    arraySize = size;
     typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(t);
     PtrDetails<T> ptr_details;
     ptr_details.arraySize = size;
     ptr_details.memPtr = t;
     ptr_details.isArray = isArray;
+    ptr_details.refcount++;
     if(p == refContainer.end()) {
         refContainer.push_back(ptr_details);
     }
@@ -141,9 +151,7 @@ some other pointer as well, we just decrement the reference*/
 template <class T, int size>
 Pointer<T, size>::~Pointer() {
     typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(addr);
-    if(p->refcount > 0) {
-        p->refcount--;
-    }
+    p->refcount--;
     collect();
 }
 
@@ -153,9 +161,10 @@ template <class T, int size>
 bool Pointer<T, size>::collect(){
     // Iterate through the list and check if 
     // the refCount on them is greater than 1.
-    typename std::list<PtrDetails<T>>::iterator p;
-    for(p=refContainer.begin(); p!=refContainer.end(); ++p){
-        if(p->refcount < 1){
+    typename std::list<PtrDetails<T>>::iterator p = refContainer.begin();
+    bool free_memory = false;
+    while(p!=refContainer.end()) {
+        if(p->refcount == 0) {
             // Also remove the object from the memory
             if(p->isArray) {
                 delete[] p->memPtr;
@@ -164,11 +173,14 @@ bool Pointer<T, size>::collect(){
                 delete p->memPtr;
             }
             // Remove PtrDetails object from the refContainer.
-            refContainer.remove(*p);
-            return true;
+            free_memory = true;
+            p = refContainer.erase(p);
+        }
+        else {
+            p++;
         }
     }
-    return false;
+    return free_memory;
 }
 
 // Overload assignment of pointer to Pointer.
@@ -186,12 +198,14 @@ T *Pointer<T, size>::operator=(T *t){
     }
     // Setting the address to be at the new pointer's address
     addr = t;
+    arraySize = size;
     // Use new PtrDetails object to point to a new address
     PtrDetails<T> ptr_details;
-    p = findPtrInfo(t);
     ptr_details.arraySize = size;
     ptr_details.memPtr = t;
     ptr_details.isArray = isArray;
+    // ptr_details.refcount++;
+    p = findPtrInfo(t);
     if(p == refContainer.end()) {
         refContainer.push_back(ptr_details);
     }
@@ -207,26 +221,24 @@ Pointer<T, size> &Pointer<T, size>::operator=(Pointer &rv){
     // we delete the reference to that object
     typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(addr);
     p->refcount--;
-    // if(size > 0) {
-    //     isArray = true;
-    // }
-    // else {
-    //     isArray = false;
-    // }
-    // // Setting the address to be at the new pointer's address
-    addr = &rv;
     // Use new PtrDetails object to point to a new address
     PtrDetails<T> ptr_details;
     p = findPtrInfo(&rv);
     ptr_details.arraySize = rv.arraySize;
     ptr_details.memPtr = rv.memPtr;
     ptr_details.isArray = rv.isArray;
+    // ptr_details.refcount++;
+
     if(p == refContainer.end()) {
         refContainer.push_back(ptr_details);
     }
     else {
         p->refcount++;
     }
+
+    addr = p->memPtr;
+    isArray = p->isArray;
+    arraySize = p->arraySize;
     return *this;
 }
 
