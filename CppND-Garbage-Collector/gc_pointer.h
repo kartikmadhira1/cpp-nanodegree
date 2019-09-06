@@ -105,32 +105,32 @@ template<class T,int size>
 Pointer<T,size>::Pointer(T *t){
     // Register shutdown() as an exit function.
     // Create a PtrDetails object and keep adding
-    if (first)
+    if(first)
         atexit(shutdown);
     first = false;
-    arraySize = size;
-    if(size > 0) {
-        isArray = true;
+    
+    typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(t);
+    PtrDetails<T> ptr_details;
+    ptr_details.arraySize = size;
+    ptr_details.memPtr = t;
+    ptr_details.isArray = isArray;
+    if(p == refContainer.end()) {
+        refContainer.push_back(ptr_details);
     }
     else {
-        isArray = false;
+        p->refcount++;
     }
-    // Setting the address to be at the new pointer's address
-    addr = &t;
-    // Setting the array size field to be that of the pointer size initialized
-    PtrDetails<T>* new_pointer = new PtrDetails<T>();
-    new_pointer.arraySize = size;
-    new_pointer.isArray = isArray;
-    new_pointer.memPtr = &t;
-    new_pointer.refcount += 1;
-    // Append this PtrDetails to the refContainer
-    refContainer.push_back(new_pointer);
 }
 // Copy constructor.
 template< class T, int size>
 Pointer<T,size>::Pointer(const Pointer &ob){
-    // Create a new pointer of type Pointer<T>
-    Pointer<T> new_pointer = 
+    // using iterator copy the fields of the object
+    typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(ob.addr);
+    p->refcount++;
+    addr = ob.addr;
+    arraySize = ob.arraySize;
+    if(arraySize > 0) isArray = true;
+    else isArray = false;
 }
 
 // Destructor for Pointer.
@@ -139,11 +139,11 @@ once the the pointer is out of scope, this destructor is called
 since the memory this pointer is pointing might be shared by 
 some other pointer as well, we just decrement the reference*/
 template <class T, int size>
-Pointer<T, size>::~Pointer(){
-    typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(*addr);
+Pointer<T, size>::~Pointer() {
+    typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(addr);
     if(p->refcount > 0) {
         p->refcount--;
-        }
+    }
     collect();
 }
 
@@ -154,7 +154,7 @@ bool Pointer<T, size>::collect(){
     // Iterate through the list and check if 
     // the refCount on them is greater than 1.
     typename std::list<PtrDetails<T>>::iterator p;
-    for(p=refContainer.begin(); p!=refContainer.end(), ++p){
+    for(p=refContainer.begin(); p!=refContainer.end(); ++p){
         if(p->refcount < 1){
             // Also remove the object from the memory
             if(p->isArray) {
@@ -174,15 +174,60 @@ bool Pointer<T, size>::collect(){
 // Overload assignment of pointer to Pointer.
 template <class T, int size>
 T *Pointer<T, size>::operator=(T *t){
-    return 
+    // If this object was previously pointing to another object
+    // we delete the reference to that object
+    typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(addr);
+    p->refcount--;
+    if(size > 0) {
+        isArray = true;
+    }
+    else {
+        isArray = false;
+    }
+    // Setting the address to be at the new pointer's address
+    addr = t;
+    // Use new PtrDetails object to point to a new address
+    PtrDetails<T> ptr_details;
+    p = findPtrInfo(t);
+    ptr_details.arraySize = size;
+    ptr_details.memPtr = t;
+    ptr_details.isArray = isArray;
+    if(p == refContainer.end()) {
+        refContainer.push_back(ptr_details);
+    }
+    else {
+        p->refcount++;
+    }
+    return addr;
 }
 // Overload assignment of Pointer to Pointer.
 template <class T, int size>
 Pointer<T, size> &Pointer<T, size>::operator=(Pointer &rv){
-
-    // TODO: Implement operator==
-    // LAB: Smart Pointer Project Lab
-
+    // If this object was previously pointing to another object
+    // we delete the reference to that object
+    typename std::list<PtrDetails<T>>::iterator p = findPtrInfo(addr);
+    p->refcount--;
+    // if(size > 0) {
+    //     isArray = true;
+    // }
+    // else {
+    //     isArray = false;
+    // }
+    // // Setting the address to be at the new pointer's address
+    addr = &rv;
+    // Use new PtrDetails object to point to a new address
+    PtrDetails<T> ptr_details;
+    p = findPtrInfo(&rv);
+    ptr_details.arraySize = rv.arraySize;
+    ptr_details.memPtr = rv.memPtr;
+    ptr_details.isArray = rv.isArray;
+    if(p == refContainer.end()) {
+        refContainer.push_back(ptr_details);
+    }
+    else {
+        p->refcount++;
+    }
+    return *this;
 }
 
 // A utility function that displays refContainer.

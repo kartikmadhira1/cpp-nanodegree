@@ -19,7 +19,7 @@ array, then arraySize contains its size */
     // the size of the array.
 
     PtrDetails(void) {
-        refcount += 0;
+        refcount = 1;
         memPtr = 0;
         isArray = false;
         arraySize = 0;
@@ -31,6 +31,5 @@ template <class T>
 bool operator==(const PtrDetails<T> &ob1,
                 const PtrDetails<T> &ob2)
 {
-    if(ob1.memPtr == ob2.memPtr) return true;
-    return false;
+    return(&ob1 == &ob2);
 }
